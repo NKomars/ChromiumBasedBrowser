@@ -20,10 +20,10 @@ namespace ChromiumBasedBrowser
         {
             InitializeComponent();
             InitializeBrowser();
-            InitializeForm();
+            InitialiseForm();
         }
 
-        private void InitializeForm()
+        private void InitialiseForm()
         {
             BrowserTabs.Height = ClientRectangle.Height - 25;
         }
@@ -31,27 +31,19 @@ namespace ChromiumBasedBrowser
         private void InitializeBrowser()
         {
             Cef.Initialize(new CefSettings());
-            browser = new ChromiumWebBrowser("https://youtube.com");
-            browser.Dock = DockStyle.Fill;
-            BrowserTabs.TabPages[0].Controls.Add(browser);
-            browser.AddressChanged += Browser_AddressChanged;
+            BrowserTabs.TabPages[0].Dispose();
+            //BrowserTabs.TabPages[0].Dispose();
+            AddBrowserTab();
         }
 
         private void toolStripButtonGo_Click(object sender, EventArgs e)
         {
-            try
-            {
-                browser.Load(toolStripAddressBar.Text);
-            }
-            catch
-            {
-
-            }           
+            Navigate(toolStripAddressBar.Text);
         }
 
         private void toolStripButtonBack_Click(object sender, EventArgs e)
         {
-            browser.Back();            
+            browser.Back();
         }
 
         private void toolStripButtonForward_Click(object sender, EventArgs e)
@@ -65,6 +57,15 @@ namespace ChromiumBasedBrowser
             this.Invoke(new MethodInvoker(() =>
             {
                 toolStripAddressBar.Text = e.Address;
+            }));
+        }
+
+        private void Browser_TitleChanged(object sender, TitleChangedEventArgs e)
+        {
+            var selectedBrowser = (ChromiumWebBrowser)sender;
+            this.Invoke(new MethodInvoker(() =>
+            {
+                selectedBrowser.Parent.Text = e.Title;
             }));
         }
 
@@ -85,7 +86,8 @@ namespace ChromiumBasedBrowser
         {
             try
             {
-                browser.Load(address);
+                var selectedBrowser = (ChromiumWebBrowser)BrowserTabs.SelectedTab.Controls[0];
+                selectedBrowser.Load(address);
             }
             catch
             {
@@ -95,9 +97,39 @@ namespace ChromiumBasedBrowser
 
         private void toolStripButtonAddTab_Click(object sender, EventArgs e)
         {
+            AddBrowserTab();
+            //select the latest browser tab
+            BrowserTabs.SelectedTab = BrowserTabs.TabPages[BrowserTabs.TabPages.Count - 2];
+        }
+
+        private void AddBrowserTab()
+        {
+            //adding a tab
             var newTabPage = new TabPage();
             newTabPage.Text = "New Tab";
-            BrowserTabs.TabPages.Add(newTabPage);
+            //BrowserTabs.TabPages.Add(newTabPage);
+            BrowserTabs.TabPages.Insert(BrowserTabs.TabPages.Count - 1, newTabPage);
+
+
+            //adding browser
+            browser = new ChromiumWebBrowser("https://datorium.eu");
+            browser.Dock = DockStyle.Fill;
+            browser.AddressChanged += Browser_AddressChanged;
+            browser.TitleChanged += Browser_TitleChanged;
+            browser.TitleChanged += Browser_TitleChanged;
+            newTabPage.Controls.Add(browser);
+        }
+
+
+        private void BrowserTabs_Click(object sender, EventArgs e)
+        {
+            //MessageBox.Show("Tab Index Changed");
+            if (BrowserTabs.SelectedTab == BrowserTabs.TabPages[BrowserTabs.TabPages.Count - 1])
+            {
+                AddBrowserTab();
+                //select the latest browser tab
+                BrowserTabs.SelectedTab = BrowserTabs.TabPages[BrowserTabs.TabPages.Count - 2];
+            }
         }
     }
 }
